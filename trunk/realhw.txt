@@ -1,0 +1,30 @@
+Notes to make games run on real hardware
+--------------------
+Emulators are often inaccurate or can't emulate some quirk of the real
+hardware easily. This is a list of what you mustn't do and what you
+should do in order to fix the problem.
+
+Some quirks might even be present only on some revisions of the PlayStation
+hardware, but the goal is that something has to run on every revision, and so
+one has to respect all the tips, regardless of model.
+So if you want to add something to the list, also specify the model it happens
+on.
+
+ALL MODELS:
+
+The most noticeable quirk is that the GPU in emulators finishes to draw instantly,
+while on the real hardware the GPU has its own speed and so you must wait for
+it to finish drawing. The result of this is that on the emulator your program will
+run just fine, while on the real hardware the graphics will be entirely scrambled
+
+The way to fix this is to add 
+
+while(GsIsDrawing());
+
+after calls like GsDrawList(), LoadImage(), MoveImage(), etc.
+This ensures that your program will first check if the GPU has finished drawing
+before doing anything else.
+
+Why doesn't the SDK do this automatically? It is designed more or less to do what
+you want to do. If you want to somewhat exploit this quirk to make something nice,
+you can.

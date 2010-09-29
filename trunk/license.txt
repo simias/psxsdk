@@ -1,0 +1,30 @@
+I don't really know how to write legalese, so I will say it in simple words:
+
+You can use this library for any project, commercial and non-commercial,
+open-source and closed-source. But if you modify the library, you must
+redistribute the source for the modifications you did to it.
+Not doing that constitutes an infringiment of this license. 
+You are not obliged to redistribute the source code of this library if it
+was not modified at all by you or anyone related to you.
+
+There is no advertising clause; you aren't obliged to mention this library
+in any documentation of your work using it.
+
+These terms were written to not make people close this work which was released
+for all to share. In fact, no use is otherwise restricted.
+
+This license also applies to the following tools: 
+bin2c, bmp2tim, getpsxiso, systemcnf
+
+Some of the tools have a different license: 
+
+for exefixup it is GPL version 2 or newer
+
+some of the other tools are derived from public sources with no clear licensing, but it
+is assumed that they were public domain. In all cases, they are attributed
+to their original authors.
+
+The PSXSDK examples are not under this license and released directly into the Public Domain,
+which means you can do everything with them and you do not have to preserve attribution.
+
+-- Giuseppe Gatta

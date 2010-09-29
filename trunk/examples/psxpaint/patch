@@ -1,0 +1,101 @@
+--- psxpaint.c.bk	2010-09-26 16:25:43.000000000 +0200
++++ psxpaint.c	2010-09-26 16:22:26.000000000 +0200
+@@ -65,6 +65,7 @@
+ {
+ 	GsRectangle colorbox;
+ 	int x, y, c=0;
++
+ 	
+ 	for(y = 384; y < (384+32); y+=16)
+ 	{
+@@ -77,6 +78,13 @@
+ 			colorbox.r = paint_colors[c][0];
+ 			colorbox.g = paint_colors[c][1];
+ 			colorbox.b = paint_colors[c][2];
++			
++
++			
++			colorbox.r = 255;
++			colorbox.g = 0;
++			colorbox.b = 0;
++			
+ 			colorbox.attribute = 0;
+ 			
+ 			GsSortRectangle(&colorbox);
+@@ -92,6 +100,7 @@
+ 
+ 	GsImageFromTim(&my_image, cursor_tim);
+  	GsUploadImage(&my_image);
++	while(GsIsDrawing());
+ }
+  
+ void my_vblank_handler(); 
+@@ -115,11 +124,14 @@
+ 
+ 	PSX_Init();
+ 	GsInit();
++	
++	printf("PSXPaint - PlayStation \"Paint\" Demo\n");
++	
++	//GsClearMem();
+ 	SetVBlankHandler(my_vblank_handler);
+ 
+ 	// This has to be interlaced	
+-	//GsSetVideoMode(640, 480, VMODE_PAL);
+-	GsSetVideoModeEx(640, 480, VMODE_PAL, 0, 1, 0);
++	GsSetVideoModeEx(640, 480, EXAMPLES_VMODE, 0, 1, 0);
+ 	
+ 	my_dispenv.x = 0;
+ 	my_dispenv.y = 0;
+@@ -131,7 +143,7 @@
+ 	my_drawenv.x = 0;
+ 	my_drawenv.y = 0;
+ 	my_drawenv.w = 640;
+-	my_drawenv.h = 480;
++	my_drawenv.h = 512;
+ 	my_drawenv.ignore_mask = 0;
+ 	my_drawenv.set_mask = 0;
+ 	
+@@ -144,7 +156,7 @@
+ 	colorbox.x = 0;
+ 	colorbox.y = 0;
+ 	colorbox.w = 640;
+-	colorbox.h = 480;
++	colorbox.h = 511;
+ 	colorbox.r = 255;
+ 	colorbox.g = 255;
+ 	colorbox.b = 255;
+@@ -166,10 +178,17 @@
+ 	my_sprite.scalex = my_sprite.scaley = 0;
+ 	my_sprite.w = 16;
+ 	my_sprite.h = 24;
+-		
++	
++	GsSortSprite(&my_sprite);
++
+ 	GsDrawList();	
+ 	while(GsIsDrawing());
+ 	
++/*	do
++	{
++		PSX_ReadPad(&pad1, NULL);
++	}while(pad1 == 0);*/
++		
+ 	// Backup 32x32 area
+ 	MoveImage(cursor_x, cursor_y, 992, 0, 32, 32);
+ 	
+@@ -334,11 +353,11 @@
+ 	
+ 			// Backup 32x32 area
+ 				MoveImage(cursor_x, cursor_y, 992, 0, 32, 32);
+-	
++				while(GsIsDrawing());
+ 		//	if(cursor_x != old_cursor_x || cursor_y != old_cursor_y)
+ 		//	{
+-				printf("cx = %d, cy = %d, cursor_speed = %d, brush_type = %d\n",
+-				cursor_x, cursor_y, cursor_speed, brush_type);
++				//printf("cx = %d, cy = %d, cursor_speed = %d, brush_type = %d\n",
++				//cursor_x, cursor_y, cursor_speed, brush_type);
+ 		
+ 
+ 			
