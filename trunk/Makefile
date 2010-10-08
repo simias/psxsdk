@@ -28,3 +28,6 @@ distclean:
 	$(MAKE_COMMAND) -C libm clean
 	$(MAKE_COMMAND) -C misc distclean
 	$(MAKE_COMMAND) -C tools distclean
+
+heh:
+	echo $(MAKE)
