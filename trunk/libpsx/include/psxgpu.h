@@ -429,5 +429,14 @@ int GsPrintFont(int x, int y, char *fmt, ...);
 void GsSetFont(int fb_x, int fb_y, int cx, int cy);
 
 
+/*
+ * Simpler functions to set drawing and display environment
+ * GsSetDrawEnvSimple enables drawing on the display area by default
+ * and all masking stuff is disabled...
+ */
+
+void GsSetDrawEnvSimple(int x, int y, int w, int h);
+void GsSetDispEnvSimple(int x, int y);
+
 enum{VMODE_NTSC, VMODE_PAL};
 #endif
