@@ -34,28 +34,83 @@ int main( int argc, char *argv[] )
     char s[4];
     int chunk_data;
     short e;
-    int sample_freq, sample_len;
+    int sample_freq = 0, sample_len;
     char internal_name[16];
-    
+	int enable_looping = 0;
+	int raw_output = 0;
+	int sraw = 0;
+    short sample_size;
+    unsigned char c;
+	
     if (argc < 3)
     {
         printf("wav2vag - Convert a WAV file to a PlayStation VAG sound file\n");
-	printf("usage: wav2vag [wav] [vag] <name>\n");
+	printf("usage: wav2vag [wav] [vag] <options>\n");
 	printf("\n");
-	printf("<name> is the internal name of the VAG file.\n");
-	printf("If not specified it will be set to \"PSXSDK\".\n");
-	printf("WAV files must be in 44100Hz, 16-bit PCM format.\n");
+	printf("WAV files must have one channel (mono)\n");
+	printf("WAV data format must be either unsigned 8-bit or signed 16-bit PCM\n");
+	printf("\n");
+	printf("Options:\n");
+	printf("   -L           - Make a looping sample (when it ends it is played again)\n");
+	printf("   -name=<name> - Set sample name\n");
+	printf("   -raw         - Output only data, without VAG header\n");
+	printf("   -sraw8       - Source is RAW data, in 8-bit format\n");
+	printf("   -sraw16      - Source is RAW data, in 16-bit format\n");
+	printf("   -freq=<freq> - Force frequency in output VAG\n");
 	printf("\n");
 	printf("This utility is based on PSX VAG-Packer by bITmASTER\n");
         return -1;
     }
-            
+    
+    strcpy(internal_name, "PSXSDK");
+	
     fp = fopen(argv[1], "rb");
     if (fp == NULL)
     {
         printf("Can´t open %s. Aborting.\n", argv[1]);
         return -2;
     }
+    
+    for(i = 3; i < argc; i++)
+	{
+		if(strcmp(argv[i], "-L") == 0)
+			enable_looping = 1;
+		
+		if(strncmp(argv[i], "-name=",6) == 0)
+			strncpy(internal_name, argv[i]+6, 15);
+		
+		if(strcmp(argv[i], "-raw") == 0)
+			raw_output = 1;
+		
+		if(strcmp(argv[i], "-sraw8") == 0)
+		{
+			fseek(fp, 0, SEEK_END);
+			sample_len = ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+			sample_size = 8;
+			sample_freq = 44010;
+			sraw = 1;
+		}
+		
+		if(strcmp(argv[i], "-sraw16") == 0)
+		{
+			fseek(fp, 0, SEEK_END);
+			sample_len = ftell(fp) / 2;
+			fseek(fp, 0, SEEK_SET);
+			sample_size = 16;
+			sample_freq = 44010;
+			sraw = 1;
+		}
+		
+		if(strncmp(argv[i], "-freq=", 6) == 0)
+		{
+			sscanf(argv[i], "-freq=%d", &sample_freq);
+		}
+	}
+    
+
+    if(sraw == 1)
+	    goto convert_to_vag;
 
     fread(s, 1, 4, fp);
     if (strncmp(s, "RIFF", 4))
@@ -102,18 +157,22 @@ int main( int argc, char *argv[] )
         return -5;
     }
 
-    fread(&sample_freq, 4, 1, fp);
+    if(sample_freq != 0)
+	fseek(fp, 4, SEEK_CUR);
+    else
+	fread(&sample_freq, 4, 1, fp);
+    
     fseek(fp, 4 + 2, SEEK_CUR);
 
-    fread(&e, 2, 1, fp);
+    fread(&sample_size, 2, 1, fp);
     
-    if (e!=16)
+ /*   if (e!=16)
     {
         //printf( "only 16 bit samples\n" );
 	printf("The size of the samples of the WAV file must be 16-bit."
 	       "Aborting.\n");
         return -6;
-    }       
+    }*/
         
     fseek(fp, chunk_data, SEEK_SET);
     
@@ -126,13 +185,15 @@ int main( int argc, char *argv[] )
     }
 
     fread(&sample_len, 4, 1, fp);
-    sample_len /= 2;
+    
+    if(sample_size == 16)
+	sample_len /= 2;
 
     /*strcpy( fname, argv[1] );
     p = strrchr( fname, '.' );
     p++;
     strcpy( p, "vag" );*/
-    
+convert_to_vag:    
     vag = fopen(argv[2], "wb");
     
     if (vag == NULL)
@@ -141,49 +202,64 @@ int main( int argc, char *argv[] )
         return -8;
     }
 
-    fprintf( vag, "VAGp" );             // ID
-    fputi( 0x20, vag );                 // Version
-    fputi( 0x00, vag );                 // Reserved
-    size = sample_len / 28;
-    if( sample_len % 28 )
-        size++;
-    fputi( 16 * ( size + 2 ), vag );    // Data size
-    fputi( sample_freq, vag );          // Sampling frequency
+/*	strcpy(internal_name, "PSXSDK");
+	
+    	for(i = 3; i < argc; i++)
+	{
+		if(strcmp(argv[i], "-L") == 0)
+			enable_looping = 1;
+		
+		if(strncmp(argv[i], "-name=",6) == 0)
+			strncpy(internal_name, argv[i]+6, 15);
+		
+		if(strcmp(argv[i], "-raw") == 0)
+			raw_output = 1;
+	}
+*/
     
-    for ( i = 0; i < 12; i++ )          // Reserved
-        fputc( 0, vag );
+	if(raw_output == 0)
+	{
+		fprintf( vag, "VAGp" );             // ID
+		fputi( 0x20, vag );                 // Version
+		fputi( 0x00, vag );                 // Reserved
+		size = sample_len / 28;
+		if( sample_len % 28 )
+			size++;
+		fputi( 16 * ( size + 2 ), vag );    // Data size
+		fputi( sample_freq, vag );          // Sampling frequency
+    
+		for ( i = 0; i < 12; i++ )          // Reserved
+			fputc( 0, vag );
 
-/*    p -= 2;
-    i = 0;
-    while( isalnum( *p ) ) {
-        i++;
-        p--;
-    }
-    p++;*/
-        
-    for(i = 0; i < 16; i++)
-    	internal_name[i] = 0;
+		fwrite(internal_name, sizeof(char), 16, vag);
     
-    if(argv[3] == NULL)
-    	strcpy(internal_name, "PSXSDK");
-    else
-    	strncpy(internal_name, argv[3], 15);
-
-    fwrite(internal_name, sizeof(char), 16, vag);
-    
-    /*for ( j = 0; j < i; j++ )           // Name
-        fputc( *p++, vag );
-    for( j = 0; j < 16-i; j++ )
-        fputc( 0, vag );*/
-    
-        
-    for( i = 0; i < 16; i++ )
-        fputc( 0, vag );                // ???
-
-    flags = 0;  
+		for( i = 0; i < 16; i++ )
+			fputc( 0, vag );                // ???
+	}
+		
+	if(enable_looping)
+		flags = 6;
+	else
+		flags = 0;  
+	
     while( sample_len > 0 ) {
         size = ( sample_len >= BUFFER_SIZE ) ? BUFFER_SIZE : sample_len; 
-        fread( wave, sizeof( short ), size, fp );
+	    
+	if(sample_size == 8)
+	{
+		for(i = 0; i < size; i++)
+		{
+			c = fgetc(fp);
+			wave[i] = c;
+			wave[i] ^= 0x80;
+			wave[i] <<= 8;
+		}
+	}
+	else
+	{
+		fread( wave, sizeof( short ), size, fp );
+	}
+	
         i = size / 28;
         if ( size % 28 ) {
             for ( j = size % 28; j < 28; j++ )
@@ -203,16 +279,23 @@ int main( int argc, char *argv[] )
                 fputc( d, vag );
             }
             sample_len -= 28;
-            if ( sample_len < 28 )
+            if ( sample_len < 28 && enable_looping == 0)
                 flags = 1;
+	    
+	    if(enable_looping)
+		flags = 2;
         }
     }
     
     fputc( ( predict_nr << 4 ) | shift_factor, vag );
-    fputc( 7, vag );            // end flag
+    
+    if(enable_looping)
+	    fputc(3, vag);
+    else
+	fputc( 7, vag );            // end flag
+    
     for ( i = 0; i < 14; i++ )
         fputc( 0, vag );
-
     
     fclose( fp );
     fclose( vag );  

@@ -3,6 +3,7 @@
 
 #include <psx.h>
 #include <stdio.h>
+#include <strings.h>
 #include "font.h"
 
 unsigned int *linked_list;
@@ -28,6 +29,18 @@ unsigned int setup_attribs(unsigned char tpage, unsigned int attribute, unsigned
 
 unsigned char gpu_stringbuf[512];
 
+int gs_calculate_scaled_size(int size, int scale)
+{
+	if(scale > 8)
+		return (size * scale) / SCALE_ONE;
+	else if(scale == 0)
+		return size;
+	else if(scale > 0)
+		return size * scale;
+	else
+		return size / (scale * -1);
+}		
+	
 void GsSetList(unsigned int *listptr)
 {
 	linked_list = listptr;
@@ -228,16 +241,32 @@ void GsSortSprite(GsSprite *sprite)
 		y = sprite->h;
 		if(y>256)y=256;
 		
-		if(sprite->scalex >= 2)
-			x*=sprite->scalex;
-		else if(sprite->scalex <= -2)
-			x/=-sprite->scalex;
+		if(sprite->scalex > 8)
+		{
+			x *= sprite->scalex;
+			x /= 4096;
+		}
+		else
+		{
+			if(sprite->scalex >= 2)
+				x*=sprite->scalex;
+			else if(sprite->scalex <= -2)
+				x/=-sprite->scalex;
+		}
 		
-		if(sprite->scaley >= 2)
-			y*=sprite->scaley;
-		else if(sprite->scaley <= -2)
-			y/=-sprite->scaley;
-		
+		if(sprite->scaley > 8)
+		{
+			y *= sprite->scaley;
+			y /= 4096;
+		}
+		else
+		{
+			if(sprite->scaley >= 2)
+				y*=sprite->scaley;
+			else if(sprite->scaley <= -2)
+				y/=-sprite->scaley;
+		}
+			
 		tpoly4.x[0] = tpoly4.x[1] = sx;
 		tpoly4.x[2] = tpoly4.x[3] = (sx + x);
 		tpoly4.y[0] = tpoly4.y[2] = sy;
@@ -748,7 +777,7 @@ int GsImageFromTim(GsImage *image, void *timdata)
 	image->w = timdata_s[pdata_pos_s + 4];
 	image->h = timdata_s[pdata_pos_s + 5];
 	image->data = &timdata_s[pdata_pos_s + 6];
-	
+		
 	/*printf("image->y = %d\n", image->y);
 	printf("image->x = %d\n", image->x);
 	printf("image->h = %d\n", image->h);
@@ -780,16 +809,10 @@ int GsSpriteFromImage(GsSprite *sprite, GsImage *image, int do_upload)
 	sprite->cx = image->clut_x;
 	sprite->cy = image->clut_y;
 	
-	if(image->pmode == 0)
-	{
+	if(image->pmode == 0) // 4-bit pixel mode
 		sprite->u*=4;
-		sprite->v*=4;
-	}
-	else if(image->pmode == 1)
-	{
+	else if(image->pmode == 1) // 8-bit pixel mode
 		sprite->u*=2;
-		sprite->v*=2;
-	}
 	
 	switch(image->pmode)
 	{
@@ -881,19 +904,22 @@ void GsLoadFont(int fb_x, int fb_y, int cx, int cy)
 	fb_font_y = fb_y;
 }
 
-int GsPrintFont(int x, int y, char *fmt, ...)
+void GsPrintFont_Draw(int x, int y, int scalex, int scaley)
 {
-	int r;
+	//int r;
 	GsSprite spr;
 	char *string;
+	int fw, fh;
 
-	va_list ap;
+	/*va_list ap;
 
-	va_start(ap, fmt);
+	va_start(ap, fmt);*/
 
-	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+//	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
 	
-	va_end(ap);
+//	va_end(ap);
+	fw = gs_calculate_scaled_size(8, scalex);//(8*scalex)/4096;
+	fh = gs_calculate_scaled_size(8, scaley);//(8*scaley)/4096;
 	
 	spr.x = x;
 	spr.y = y;
@@ -904,6 +930,8 @@ int GsPrintFont(int x, int y, char *fmt, ...)
 	spr.tpage = (fb_font_x / 64) + ((fb_font_y / 256)*16);
 	spr.w = 8;
 	spr.h = 8;
+	spr.scalex = scalex;
+	spr.scaley = scaley;
 	
 	string = gpu_stringbuf;
 	
@@ -913,21 +941,139 @@ int GsPrintFont(int x, int y, char *fmt, ...)
 		{
 			spr.u = ((fb_font_x & 0x3f)*4)+((*string & 7) << 3);
 			spr.v = (fb_font_y & 0xff)+(*string & 0xf8);
-			spr.x += 8;
-			GsSortSimpleSprite(&spr);
+			
+			if((scalex == 0 || scalex == 1) && (scaley == 0 || scaley == 1))
+				GsSortSimpleSprite(&spr);
+			else
+				GsSortSprite(&spr);
+			
+			spr.x += fw;
 		}
 		
 		if(*string == '\n')
 		{
 			spr.x = x;
-			spr.y += 8;
+			spr.y += fh;
 		}
 		
 		string++;
 	}
+}
 
+int GsPrintFont(int x, int y, char *fmt, ...)
+{
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x, y, 1, 1);
+	
+	va_end(ap);
+	
 	return r;
 }
+
+int GsPrintFontCenter(int x, int y, char *fmt, ...)
+{
+// Like GsPrintFont, but text is centered relative to the specified X position	
+	
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x - (r * 4), y, 1, 1);
+	
+	va_end(ap);
+	
+	return r;
+}
+
+int GsPrintFontRight(int x, int y, char *fmt, ...)
+{
+// Like GsPrintFont, but text is justified to the right
+// actual starting X position = X position - (length of string * 8)	
+	
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x - (r * 8), y, 1, 1);
+	
+	va_end(ap);
+	
+	return r;
+}
+
+int GsPrintFontScaled(int x, int y, int sx, int sy, char *fmt, ...)
+{
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x, y, sx, sy);
+	
+	va_end(ap);
+	
+	return r;
+}
+
+int GsPrintFontCenterScaled(int x, int y, int sx, int sy, char *fmt, ...)
+{
+// Like GsPrintFont, but text is centered relative to the specified X position	
+	
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+	int fw = gs_calculate_scaled_size(8, sx);//(8*sx)/4096;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x - (r * (fw/2)), y, sx, sy);
+	
+	va_end(ap);
+	
+	return r;
+}
+
+int GsPrintFontRightScaled(int x, int y, int sx, int sy, char *fmt, ...)
+{
+// Like GsPrintFont, but text is justified to the right
+// actual starting X position = X position - (length of string * font character width)	
+	
+	int r;
+	GsSprite spr;
+	char *string;
+	va_list ap;
+	int fw = gs_calculate_scaled_size(8, sx);//(8*sx)/4096;
+
+	va_start(ap, fmt);
+
+	r = vsnprintf(gpu_stringbuf, 512, fmt, ap);
+	GsPrintFont_Draw(x - (r * fw), y, sx, sy);
+	
+	va_end(ap);
+	
+	return r;
+}
+
 
 void GsSetFont(int fb_x, int fb_y, int cx, int cy)
 {

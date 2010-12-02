@@ -11,7 +11,7 @@ RANLIB = mipsel-unknown-elf-ranlib
 
 all: libpsx.a
 
-libpsx.a: out/syscalls.o out/psxsdk.o out/libc.o out/setup.o out/memory.o out/gpu.o out/memcard.o start.o
+libpsx.a: out/syscalls.o out/psxsdk.o out/libc.o out/setup.o out/memory.o out/gpu.o out/memcard.o out/pad.o out/spu.o start.o
 	$(AR) r libpsx.a out/*
 	$(RANLIB) libpsx.a
 
@@ -35,6 +35,15 @@ out/gpu.o: src/gpu.c
 
 out/memcard.o: src/memcard.c
 	$(CC) $(CFLAGS) -c -o out/memcard.o src/memcard.c
+
+out/pad.o: src/pad.c
+	$(CC) $(CFLAGS) -c -o out/pad.o src/pad.c
+
+out/spu.o: src/spu.c
+	$(CC) $(CFLAGS) -c -o out/spu.o src/spu.c
+
+#out/adpcm.o: src/adpcm.c
+#	$(CC) $(CFLAGS) -c -o out/adpcm.o src/adpcm.c
 
 start.o: src/start.s
 	$(CC) $(CFLAGS) -c -o start.o src/start.s

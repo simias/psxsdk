@@ -5,7 +5,7 @@ include ../Makefile.cfg
 CC = gcc
 CFLAGS = -Wall -g
 TOOL_LIST = bmp2tim elf2exe getpsxiso mkpsxiso vag2wav wav2vag exefixup \
-		systemcnf bin2c huff
+		systemcnf bin2c huff mod4psx tim2bmp
 
 all: $(TOOL_LIST)
 
@@ -38,7 +38,13 @@ bin2c: bin2c.c
 
 huff: huff.c
 	$(CC) $(CFLAGS) -o huff huff.c
-	
+
+mod4psx: mod4psx.c adpcm.c
+	$(CC) $(CFLAGS) -o mod4psx mod4psx.c adpcm.c ../libmodplay/libmodplay_nopsx.a -lm
+
+tim2bmp: tim2bmp.c
+	$(CC) $(CFLAGS) -o tim2bmp tim2bmp.c -lz
+
 clean:
 	rm -f $(TOOL_LIST)
 

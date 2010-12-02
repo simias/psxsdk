@@ -26,6 +26,13 @@ unsigned long GetKernelDate();
 const char *GetKernelRomVersion();
 
 /*
+ * GetSystemRomVersion() returns a pointer to a zero-terminated
+ * string which contains the system ROM version.
+ */
+
+const char *GetSystemRomVersion();
+
+/*
  * GetRamSize() should return size of RAM in bytes.
  * It doesn't seem to work most times. On SCPH1001, it returns 0.
  * On SCPH1000, it returns 2 (which is the number of megabytes of RAM

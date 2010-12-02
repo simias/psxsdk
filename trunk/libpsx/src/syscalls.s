@@ -212,14 +212,13 @@ qsort:
 	nop
 
 # Memory functions
-.global bcopy
-.global bzero
-.global bcmp
+#.global bcopy
+#.global bzero
+#.global bcmp
 #.global memcpy
 #.global memset
-.global memmove
-.global memcmp
-.global memchr
+#.global memmove
+# .global memchr
 #.global malloc
 #.global free
 .global lsearch
@@ -229,34 +228,27 @@ qsort:
 .global InitHeap
 .global FlushCache
 
-bcopy:
-	li $9, 0x27
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#bcopy:
+#	li $9, 0x27
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 	
-bzero:
-	li $9, 0x28
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#bzero:
+#	li $9, 0x28
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 	
-bcmp:
-	li $9, 0x29
-	j 0xa0
-	nop
-	jr $ra
-	nop
-	
-memcmp:
-	li $9, 0x2a
-	j 0xa0
-	nop
-	jr $ra
-	nop
-	
+#bcmp:
+#	li $9, 0x29
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
+		
 #memset:
 #	li $9, 0x2b
 #	j 0xa0
@@ -264,12 +256,12 @@ memcmp:
 #	jr $ra
 #	nop
 	
-memmove:
-	li $9, 0x2c
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#memmove:
+#	li $9, 0x2c
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 	
 #memcpy:
 #	li $9, 0x2d
@@ -278,12 +270,12 @@ memmove:
 #	jr $ra
 #	nop
 	
-memchr:
-	li $9, 0x2e
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#memchr:
+#	li $9, 0x2e
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 	
 #malloc:
 #	li $9, 0x33
@@ -299,19 +291,19 @@ memchr:
 #	jr $ra
 #	nop
 	
-lsearch:
-	li $9, 0x35
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#lsearch:
+#	li $9, 0x35
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 	
-bsearch:
-	li $9, 0x36
-	j 0xa0
-	nop
-	jr $ra
-	nop
+#bsearch:
+#	li $9, 0x36
+#	j 0xa0
+#	nop
+#	jr $ra
+#	nop
 
 #calloc:
 #	li $9, 0x37
@@ -678,6 +670,7 @@ LoadExec:
 
 .global InitCARD
 .global StartCARD
+.global StopCARD
 .global _card_info
 .global _card_load
 .global _card_auto
@@ -695,6 +688,13 @@ InitCARD:
 	
 StartCARD:
 	li $9, 0x4b
+	j 0xb0
+	nop
+	jr $ra
+	nop
+
+StopCARD:
+	li $9, 0x4c
 	j 0xb0
 	nop
 	jr $ra

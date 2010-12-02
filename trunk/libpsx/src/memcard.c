@@ -52,6 +52,8 @@ int McdWriteData(McdSlotDef *def, int cardn, unsigned char *data)
 	
 	McdDefToHeader(def, slot_hdr);
 	
+	StartCARD();
+	
 	fd = open(fname_buf, O_CREAT | (def->num_of_slots << 16));
 	if(fd == -1)
 		return 0;
@@ -74,6 +76,8 @@ int McdWriteData(McdSlotDef *def, int cardn, unsigned char *data)
 	}
 	
 	close(fd);
+	
+	StopCARD();
 	
 	return 1;
 }

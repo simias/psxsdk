@@ -131,7 +131,7 @@ The PSXSDK already does that for BIOS functions which were found not working or 
 
 Help! My PlayStation crashed / something odd appeared on screen / other hardware bug
 
-PSXSDK was primarily tested on a PAL SCPH-102 PSOne, on SCPH-7002 and SCPH-9002 PlayStations and on the PCSX emulator.
+PSXSDK was primarily tested on a PAL SCPH-102 PSOne, on SCPH-5552, SCPH-7002 and SCPH-9002 PlayStations and on the PCSX emulator.
 There are probably several hardware quirks and oddities I've not accounted for but which happen
 on other models of the console. Please send an email if something like that happens.
 Be sure to read realhw.txt in the documentation directory first, though, as it might be 

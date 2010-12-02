@@ -13,6 +13,8 @@
 #define RCNT_MODE(x)			*((unsigned int*)(0x1f801104 + (x<<4)))
 #define RCNT_TARGET(x)		*((unsigned int*)(0x1f801108 + (x<<4)))
 
+const char *sysromver_unavail = "System ROM Version Unavailable";
+
 unsigned char padread_buf[2][8];
 
 void (*vblank_handler_callback)();
@@ -49,52 +51,64 @@ void PSX_Init()
 	_96_init();
 	
 	/* Initialize memory card */
+        
+        InitCARD(1);
+
+// Start BIOS memory card handling 	
 	
-	InitCARD(1);
-	StartCARD();
-	_bu_init();
+        StartCARD();
+        _bu_init();
+
+// Stop BIOS memory card handling
+// We will start the BIOS memory card handling only when we really need it
+// Otherwise they get into conflicts with the low-level pad reading routines
+// and everything freezes...
+// The conflicts happen because some internal routines for the memory
+// card are run by the BIOS at regular time intervals
+
+	StopCARD();
+
+// Pad initialization stuff here...
+#warning "Initialize pads even if the BIOS does not do it!!"
 	
-	InitPAD(padread_buf[0], 8, padread_buf[1], 8);
-	StartPAD();
+	printf("PSXSDK testing version !!!\n");
 	
 	vblank_handler_set = 0;
-	
-// Commented below because it causes a bug where the program doesn't start
-// without joysticks connected.
-	
-	/*do
-	{
-		PSX_ReadPad(&btnbuf, &btnbuf2);
-	}while(btnbuf == 0xffff || btnbuf2 == 0xffff);*/
 }
 
 void PSX_ReadPad(unsigned short *padbuf, unsigned short *padbuf2)
 {
 	int x;
-
-	//for(x=0;x<8;x++)
-	//	printf("padread_buf[1][%d] = %x\n", x, padread_buf[1][x]);
-
-	if(padbuf != NULL && PSX_GetPadType(0))
-		*padbuf = ~((padread_buf[0][2]<<8)|padread_buf[0][3]);
-	else
-		*padbuf = 0;
+	unsigned char arr[16];
+	unsigned short *padbuf_a[2];
+	
+// Now uses low level pad routines...	
+	padbuf_a[0] = padbuf;
+	padbuf_a[1] = padbuf2;
 		
-	if(padbuf2 != NULL && PSX_GetPadType(1))
-		*padbuf2 = ~((padread_buf[1][2]<<8)|padread_buf[1][3]);
-	else
-		*padbuf2 = 0;
+	for(x = 0; x < 2; x++)
+	{
+		pad_read_raw(x, arr);
+		
+		if(arr[2] == 0x5a)
+		{
+			*padbuf_a[x] = (arr[3]<<8)|arr[4];
+			*padbuf_a[x] = ~*padbuf_a[x];
+		}
+		else
+			*padbuf_a[x] = 0;
+	}
 }
 
 int PSX_GetPadType(unsigned int pad_num)
 {
-	if(pad_num >= 2)
+	/*if(pad_num >= 2)
 		return PADTYPE_NONE;
 
 	if(padread_buf[pad_num][0] != 0)
 		return PADTYPE_NONE;
 
-	return (padread_buf[pad_num][1]>>4)&0xf;
+	return (padread_buf[pad_num][1]>>4)&0xf;*/
 }
 
 
@@ -233,7 +247,15 @@ int StopRCnt(int spec)
 void SetVBlankHandler(void (*callback)())
 {
 	if(vblank_handler_set == 1)
+	{
+		EnterCriticalSection();
+		
+		vblank_handler_callback = callback;
+	
+		ExitCriticalSection();
+		
 		return;
+	}
 	
 // Enter critical section
 	
@@ -263,7 +285,15 @@ void RemoveVBlankHandler()
 void SetRCntHandler(void (*callback)(), int spec, unsigned short target)
 {
 	if(rcnt_handler_set == 1)
+	{
+		EnterCriticalSection();
+		
+		rcnt_handler_callback = callback;
+		
+		ExitCriticalSection();
+		
 		return;
+	}
 	
 // Enter critical section
 	
@@ -280,4 +310,20 @@ void SetRCntHandler(void (*callback)(), int spec, unsigned short target)
 // Exit critical section
 	
 	ExitCriticalSection();
+}
+
+const char *GetSystemRomVersion()
+{
+// Get pointer to zero-terminated string containing System ROM Version which is embedded in
+// most PlayStation BIOSes.
+
+// If getting the pointer is not possible, a pointer to a string saying "System ROM Unavailable" is returned.
+	
+	int x;
+	
+	for(x = 0x7ffee; x >= 0; x--)
+		if(memcmp("System ROM Version", (void*)(0xbfc00000 + x), 18) == 0)
+			return (char*)(0xbfc00000 + x);
+	
+	return sysromver_unavail;
 }

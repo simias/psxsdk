@@ -31,7 +31,7 @@ char *strstr(char *big , char *little);
 
 void *memset(void *dst , char c , int n);
 void *memmove(void *dst , void *src , int n);
-int memcmp(void *dst , void *src , int n);
+int memcmp(void *b1 , void *b2 , int n);
 void *memchr(void *s , int c , int n);
 void *memcpy(void *dst , void *src , int n);
 

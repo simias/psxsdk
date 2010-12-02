@@ -164,6 +164,15 @@ typedef struct
 	    
 	   scaley:
 	    Denotes vertical scaling
+	    
+	    *** The behaviour below was introduced in PSXSDK 0.5
+	    
+	    If scalex > 8,
+		resulting width will be (original_width * scalex) / 4096
+		scalex = 4096 (SCALE_ONE) (original width), scalex = 2048 (half width), etc.
+	    If scaley > 8,
+	        resulting height will be (original_height * scaley) / 4096
+		works like scalex but affects height
 	 */
 	 signed int scalex, scaley;
 }GsSprite;
@@ -421,6 +430,11 @@ void GsLoadFont(int fb_x, int fb_y, int cx, int cy);
  */
 
 int GsPrintFont(int x, int y, char *fmt, ...);
+int GsPrintFontCenter(int x, int y, char *fmt, ...);
+int GsPrintFontRight(int x, int y, char *fmt, ...);
+int GsPrintFontScaled(int x, int y, int sx, int sy, char *fmt, ...);
+int GsPrintFontCenterScaled(int x, int y, int sx, int sy, char *fmt, ...);
+int GsPrintFontRightScaled(int x, int y, int sx, int sy, char *fmt, ...);
 
 /*
  * Change font coordinates without reloading it
@@ -439,4 +453,9 @@ void GsSetDrawEnvSimple(int x, int y, int w, int h);
 void GsSetDispEnvSimple(int x, int y);
 
 enum{VMODE_NTSC, VMODE_PAL};
+
+// One scaling unit.
+
+#define SCALE_ONE		4096
+
 #endif

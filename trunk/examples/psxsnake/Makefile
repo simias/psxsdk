@@ -25,6 +25,7 @@ make_image:
 	systemcnf psxsnake.exe > cd_root/system.cnf
 	cp psxsnake.exe cd_root
 	cp data/*.tim cd_root
+	cp data/*.raw cd_root
 	mkisofs -o psxsnake.hsf -V PSXSNAKE -sysid PLAYSTATION cd_root
 	mkpsxiso psxsnake.hsf psxsnake.bin $(TOOLCHAIN_PREFIX)/share/licenses/infousa.dat
 	mv psxsnake.bin psxsnake.cue cdimg

@@ -11,6 +11,7 @@ int screen_old = 0;
 
 int snake_array[29][40];
 int scc = 0;
+int vibration_cntdown = 0;
 
 int snake_size = 3;
 int game_over = 0;
@@ -21,6 +22,8 @@ int l1_pressed = 0;
 int level_number = 1;
 int score = 0;
 int seed_counter = 0;
+
+int sample_pos[3]; // 0 = music, 1 = collision, 2 = apple
 
 unsigned int game_draw_list[0x4000]; /* 128 kilobytes */
 
@@ -40,7 +43,7 @@ void game_run_gameover();
 int pal_or_ntsc_selection();
 int main();
 int check_snake_collision(int x, int y);
-void load_file_into_buffer(char *fname);
+int load_file_into_buffer(char *fname);
 void game_print(char *string, int x, int y);
 void game_center_print(char *string, int x, int y);
 void setup_snake_field();
@@ -91,6 +94,11 @@ void game_init()
 	
 // Set drawing list
 	GsSetList(game_draw_list);
+	
+// Initialize sound
+	SsInit();
+	
+	
 }
 
 void game_vblank_handler()
@@ -201,14 +209,53 @@ int main()
 	
 	GsSetVideoMode(320, 240, vmode);
 	
-	game_setup();
 	
 	load_file_into_buffer("cdrom:BACKGRND.TIM;1");
 	GsImageFromTim(&game_image, file_buffer);
 	
 	GsUploadImage(&game_image);
 	
+	sample_pos[0] = SPU_DATA_BASE_ADDR;
+	c = load_file_into_buffer("cdrom:MUSIC.RAW;1");
+	SsUpload(file_buffer, c, sample_pos[0]);
+	
+	if(c&0x7)
+	{
+		c|=0x7;
+		c++;
+	}
+	
+	sample_pos[1] = c + sample_pos[0];
+	c = load_file_into_buffer("cdrom:BOMB.RAW;1");
+	SsUpload(file_buffer, c, sample_pos[1]);
+	
+	/* ... */
+	if(c&0x7)
+	{
+		c|=0x7;
+		c++;
+	}
+	
+	sample_pos[2] = c + sample_pos[1];
+	c = load_file_into_buffer("cdrom:APPLE.RAW;1");
+	SsUpload(file_buffer, c, sample_pos[2]);
+	
+	SsVoiceStartAddr(0, sample_pos[0]);
+	SsVoiceStartAddr(1, sample_pos[1]);
+	SsVoiceStartAddr(2, sample_pos[2]);
+	
+	SsVoiceVol(0, 0x3fff, 0x3fff);
+	SsVoiceVol(1, 0x3fff, 0x3fff);
+	SsVoiceVol(2, 0x3fff, 0x3ffff);
+	
+	SsVoicePitch(0, 0x1000 / (44100 / 11025));
+	SsVoicePitch(1, 0x1000 / (44100 / 11025));
+	SsVoicePitch(2, 0x1000);
+	
+	game_setup();
+	
 	SetVBlankHandler(game_vblank_handler);
+	
 	
 	while(1)
 		game_run();
@@ -223,7 +270,6 @@ int check_snake_collision(int x, int y)
 	else if(snake_array[y][x] == 0)
 		return 1; // Collided with nothing
 		
-		
 	return 0; // Die, because snake collided with itself
 }
 
@@ -236,6 +282,17 @@ void game_run()
 	while(speed_counter > 0)
 	{
 		scc++;
+		
+		if(vibration_cntdown > 0)
+		{
+			printf("vibration = %d\n", vibration_cntdown);
+			pad_enable_vibration(0);
+			pad_set_vibration(0, 0xFF, 0x80);
+			vibration_cntdown--;
+			
+			if(vibration_cntdown == 0)
+				pad_set_vibration(0, 0, 0);
+		}	
 		
 		PSX_ReadPad(&padbuf, NULL);
 		
@@ -294,12 +351,16 @@ void game_run()
 								snake_size++;
 								score+=100;
 								//printf("%d\n", score);
+								SsKeyOn(2);
 								new_apple();
 							}
 						}
 						else
 						{
+							vibration_cntdown = 10;
 							game_over = 1;
+							SsKeyOff(0);
+							SsKeyOn(1);
 							scc = 0;
 						}
 						
@@ -487,7 +548,7 @@ void game_run_gameover()
 	while(1);
 }
 
-void load_file_into_buffer(char *fname)
+int load_file_into_buffer(char *fname)
 {
 	FILE *f;
 	int sz;
@@ -515,6 +576,8 @@ void load_file_into_buffer(char *fname)
 	fread(file_buffer, sizeof(char), sz, f);
 	
 	fclose(f);
+	
+	return sz;
 }
 
 void game_print(char *string, int x, int y)
@@ -598,5 +661,6 @@ void game_setup()
 	speed_counter = 0;
 	score = 0;
 	setup_snake_field();
+	SsKeyOn(0);
 }
 

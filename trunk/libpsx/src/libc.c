@@ -46,7 +46,7 @@
 	\
 	if(pad_quantity < 0) pad_quantity = 0;
 
-#define calculate_real_padding_hex() \
+/*#define calculate_real_padding_hex() \
 	for (x = 0; x < 8; x++) \
 	{ \
 		if(x == 0) \
@@ -56,7 +56,16 @@
 		if((arg >> (x * 4)) & 0xf) \
 			pad_quantity--; \
 		} \
-	}
+	}*/
+	
+#define calculate_real_padding_hex() \
+	last = 0; \
+	for (x = 0; x < 8; x++) \
+		if((arg >> (x * 4)) & 0xf) \
+			last = x; \
+	\
+	pad_quantity = (pad_quantity - 1) - last; \
+	if(pad_quantity < 0) pad_quantity = 0;
 
 #define write_padding() \
 	if(!(flags & SPRINTF_NEGFIELD_FLAG)) \
@@ -189,6 +198,7 @@ int vsnprintf(char *string, unsigned int size, char *fmt, va_list ap)
 	int ssz = size - 1;
 	int zero_flag_imp = 0;
 	int pad_quantity = 0;
+	int last;
 	
 	l = strlen(fmt);
 	
@@ -802,3 +812,41 @@ void *memset(void *dst , char c , int n)
 		dstc[x] = c;
 }
 
+int memcmp(void *b1, void *b2, int n)
+{
+	int x;
+	unsigned char *bp1 = (unsigned char*)b1;
+	unsigned char *bp2 = (unsigned char*)b2;
+	
+	for(x = 0;  x < n; x++)
+		if(bp1[x] != bp2[x])
+			return (bp1[x] - bp2[x]);
+		
+	return 0;
+}
+
+void *memmove(void *dst, void *src, int len)
+{
+	void *dst2 = dst;
+	
+	dst+=len-1;
+	src+=len-1;
+	
+	while(len--)
+		*(((unsigned char*)dst--)) = *(((unsigned char*)src--));
+		
+	return dst2;
+}
+
+void *memchr(void *s , int c , int n)
+{
+	while(n--)
+	{
+		if(*((unsigned char*)s) == (unsigned char)c)
+			return s;
+		
+		s++;
+	}
+	
+	return NULL;
+}

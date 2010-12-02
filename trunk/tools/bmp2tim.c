@@ -35,6 +35,7 @@ unsigned int tim_flag;
 int set_stp_bit = 0;
 
 int transparent_black = 0;
+int magic_pink = 0;
 
 PS_RGB *ps_default_palette;
 
@@ -372,6 +373,8 @@ void parse_options(int argc, char *argv[])
 			set_stp_bit = 1;
 		else if(strcmp("-noblack", argv[x]) == 0)
 			transparent_black = 1;
+		else if(strcmp("-mpink", argv[x]) == 0)
+			magic_pink = 1;
 	}
 }		
 
@@ -384,12 +387,24 @@ unsigned short rgb24_to_rgbpsx(unsigned char r, unsigned char g, unsigned char b
 	c|= (b>>3)<<10;
 	
 	/*if(set_stp_bit) c|=0x8000;*/
+// this code is a bit messy, tidy it up.
 	
 	if(c == 0 && !transparent_black)
 		c|=0x8000;
 	
+	if(c == ((31)|(31<<10)) && magic_pink)
+		c=0;
+	
 	if(set_stp_bit)
+	{
+		if(transparent_black && c == 0)
+			return c;
+		
+		if(magic_pink && c == ((31)|(31<<10)))
+			return c;
+		
 		c|=0x8000;
+	}
 	
 	return c;
 }
@@ -410,10 +425,11 @@ int main(int argc, char *argv[])
 		printf("bmp2tim - converts a bitmap to a TIM image\n");
 		printf("usage: bmp2tim <inbmp> <outtim> <depth> [options]\n\n");
 		printf("Options:\n");
-		printf("  -clut=x,y       - Generate a Color Look Up Table   (default: OFF)\n");
-		printf("  -org=x,y        - Set image origin in framebuffer  (default: 0, 0)\n");
-		printf("  -stp            - Set semi transparency bit        (default: BLACK ONLY)\n");
-		printf("  -noblack        - Make black transparent           (default: OFF)\n\n");
+		printf("  -clut=x,y       - Generate a Color Look Up Table    (default: OFF)\n");
+		printf("  -org=x,y        - Set image origin in framebuffer   (default: 0, 0)\n");
+		printf("  -stp            - Set semi transparency bit         (default: BLACK ONLY)\n");
+		printf("  -noblack        - Make black transparent            (default: OFF)\n");
+		printf("  -mpink          - Magic pink, 255,0,255 transparent (default: OFF)\n\n");
 		printf("Valid TIM depths are 4 (16-color), 8 (256-color), 16 (RGB555) and 24 (RGB888)\n");
 		return -1;
 	}
@@ -468,6 +484,12 @@ int main(int argc, char *argv[])
 	}
 	
 	in_bitmap = ps_load_bitmap(argv[1], in_palette);
+	
+	if(in_bitmap == NULL)
+	{
+		printf("Unable to load bitmap. Unsupported format or file is unreadable or does not exist.\n");
+		return -1;
+	}
 	
 	if(tim_depth == 4 && in_bitmap->depth > 4)
 	{
