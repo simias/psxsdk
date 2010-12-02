@@ -36,7 +36,7 @@ You can change the number of the base sound voice to another value by using the 
 
 ISSUES
 --------------------
-- With ProTracker MODs, sample looping is not implemented yet and many effects aren't implemented yet
+- With ProTracker MODs, sample looping is not implemented yet when converting samples at runtime and many effects aren't implemented yet
   so some modules could sound differently to how they should sound.
 - Tempo is wrong for Composer 669 music modules because the format is badly documented
 - Sampe looping for Composer 669 modules is not implemented yet
