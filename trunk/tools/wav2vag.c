@@ -11,6 +11,8 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "endian.c"
+
 #define BUFFER_SIZE 128*28
 
 short wave[BUFFER_SIZE];
@@ -61,6 +63,9 @@ int main( int argc, char *argv[] )
 	printf("This utility is based on PSX VAG-Packer by bITmASTER\n");
         return -1;
     }
+    
+    for(i = 0; i < sizeof(internal_name); i++)
+	internal_name[i] = 0;
     
     strcpy(internal_name, "PSXSDK");
 	
@@ -137,10 +142,12 @@ int main( int argc, char *argv[] )
         return -3;
     }
     
-    fread(&chunk_data, 4, 1, fp); 
+   // fread(&chunk_data, sizeof(int), 1, fp); 
+    chunk_data = read_le_dword(fp);
     chunk_data += ftell(fp);
     
-    fread(&e, 2, 1, fp);
+  //  fread(&e, 2, 1, fp);
+     e = read_le_word(fp);
     
     if (e!=1)
     {
@@ -148,7 +155,8 @@ int main( int argc, char *argv[] )
         return -4;
     }   
 
-    fread(&e, 2, 1, fp);
+//    fread(&e, 2, 1, fp);
+    e = read_le_word(fp);
     
     if (e!=1)
     {
@@ -160,11 +168,13 @@ int main( int argc, char *argv[] )
     if(sample_freq != 0)
 	fseek(fp, 4, SEEK_CUR);
     else
-	fread(&sample_freq, 4, 1, fp);
+	//fread(&sample_freq, 4, 1, fp);
+        sample_freq = read_le_dword(fp);
     
     fseek(fp, 4 + 2, SEEK_CUR);
 
-    fread(&sample_size, 2, 1, fp);
+//    fread(&sample_size, 2, 1, fp);
+    sample_size = read_le_word(fp);
     
  /*   if (e!=16)
     {
@@ -184,7 +194,8 @@ int main( int argc, char *argv[] )
         return -7;
     }
 
-    fread(&sample_len, 4, 1, fp);
+    // fread(&sample_len, 4, 1, fp);
+    sample_len = read_le_dword(fp);
     
     if(sample_size == 16)
 	sample_len /= 2;
@@ -257,7 +268,9 @@ convert_to_vag:
 	}
 	else
 	{
-		fread( wave, sizeof( short ), size, fp );
+		// fread( wave, sizeof( short ), size, fp );
+		for(i = 0; i < size; i++)
+			wave[i] = read_le_word(fp);
 	}
 	
         i = size / 28;

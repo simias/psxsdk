@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
 				
 			}
 
-			printf("%d) %s, %d -> %d, %d, %d\n", x, mod->sample[x].name,
+			printf("%d) %s, %d -> %d, %d, %d, FIN=%d\n", x, mod->sample[x].name,
 				mod->sample[x].length, sz,
 				mod->sample[x].repeat_off,
-					mod->sample[x].repeat_len);
+					mod->sample[x].repeat_len, mod->sample[x].finetune);
 		}
 		else
 		{

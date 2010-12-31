@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "endian.c"
+
 double f[5][2] = { { 0.0, 0.0 },
                     {   60.0 / 64.0,  0.0 },
                     {  115.0 / 64.0, -52.0 / 64.0 },

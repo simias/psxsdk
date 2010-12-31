@@ -89,10 +89,6 @@
 char onesec_buf[2048];
 int errno;
 
-/*
- * Just a placeholder until we get dynamic memory allocation working...
- */
-
 FILE file_structs[256];
 
 unsigned char file_state[256];

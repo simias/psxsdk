@@ -33,3 +33,4 @@ This is list is still incomplete as 0.5 is still being worked on.
   GsPrintFontCenter() justifies at the center).
 - Added GsPrintFontScaled() family functions which output a scaled font from the 8x8 font.
 - In 0.1 bmp2tim crashed if it didn't find or couldn't read the source bitmap, this is fixed now.
+- Fixed endianness issue for wav2vag on big endian machines.

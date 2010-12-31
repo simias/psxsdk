@@ -153,5 +153,16 @@ Can I sell a game I make with my PSXSDK?
 
 Yes, as you are not infringing any copyright.
 
+I want to use Caetla to upload and test programs on my PlayStation, but I cannot find a version of CatFlap for an operating system which is not DOS or Windows. Are there?
+
+Very recently Fabio Battaglia (hkzlabs) released his CatFlap for Linux. You can use that on Linux, and use its source
+code as a starting point for a port to other operating systems.
+
+When uploading and running programs with CatFlap, they hang after some PSXSDK initialization messages.
+How can I make them not hang? I cannot run anything!
+
+Insert a CD into the drive of your PlayStation. It doesn't have to be a PlayStation CD, any CD is good.
+This happens due to the initialization routines of the CDROM subsystem. Hopefully it will be fixed someday.
+
 Written by Giuseppe Gatta
 E-mail: tails92@gmail.com

@@ -5,7 +5,7 @@ include ../Makefile.cfg
 CC = gcc
 CFLAGS = -Wall -g
 TOOL_LIST = bmp2tim elf2exe getpsxiso mkpsxiso vag2wav wav2vag exefixup \
-		systemcnf bin2c huff mod4psx tim2bmp
+		systemcnf bin2c huff mod4psx tim2bmp lictool
 
 all: $(TOOL_LIST)
 
@@ -44,6 +44,9 @@ mod4psx: mod4psx.c adpcm.c
 
 tim2bmp: tim2bmp.c
 	$(CC) $(CFLAGS) -o tim2bmp tim2bmp.c -lz
+	
+lictool: lictool.c
+	$(CC) $(CFLAGS) -o lictool lictool.c
 
 clean:
 	rm -f $(TOOL_LIST)

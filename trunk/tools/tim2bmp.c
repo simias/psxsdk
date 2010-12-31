@@ -1,3 +1,11 @@
+/*
+ * TIM2BMP
+ * Converts TIM, emulator save state VRAM data and raw PSX data
+ * to Windows bitmap format
+ *
+ * Written by Giuseppe Gatta (a.k.a. nextvolume), part of PSXSDK
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <zlib.h>
@@ -22,58 +30,7 @@ typedef struct
 
 tim2bmp_info	tim_info;
 
-unsigned short read_le_word(FILE *f)
-{
-	unsigned char c;
-	unsigned short i;
-	
-	fread(&c, sizeof(char), 1, f);
-	i = c;
-	fread(&c, sizeof(char), 1, f);
-	i|=(c<<8);
-
-	return i;
-}
-
-unsigned int read_le_dword(FILE *f)
-{
-	unsigned char c;
-	unsigned int i;
-	
-	fread(&c, sizeof(char), 1, f);
-	i = c;
-	fread(&c, sizeof(char), 1, f);
-	i|=(c<<8);
-	fread(&c, sizeof(char), 1, f);
-	i|=(c<<16);
-	fread(&c, sizeof(char), 1, f);
-	i|=(c<<24);
-
-	return i;
-}
-
-
-void write_le_word(FILE *f, unsigned short leword)
-{
-	unsigned char c;
-	
-	c = leword & 0xff;
-	fwrite(&c, sizeof(char), 1, f);
-	c = leword >> 8;
-	fwrite(&c, sizeof(char), 1, f);
-}
-
-void write_le_dword(FILE *f, unsigned int ledword)
-{
-	unsigned char c;
-	int x;
-	
-	for(x = 0; x < 4; x++)
-	{
-		c = (ledword >> (x<<3)) & 0xff;
-		fwrite(&c, sizeof(char), 1, f);
-	}
-}
+#include "endian.c"
 
 void rgbpsx_to_rgb24(unsigned short psx_c, unsigned char *r, 
 	unsigned char *g, unsigned char *b)
@@ -154,17 +111,21 @@ int write_bitmap_headers(FILE *f, int w, int h, int bpp)
 	return ret;
 }
 
-int tim2bmp_read_tim(FILE *i, tim2bmp_info *t)
+int tim2bmp_read_tim(char *ip, tim2bmp_info *t)
 {
 	int tim_pmode;
 	int tim_w, tim_h, tim_x, tim_y, tim_cx, tim_cy, tim_cw, tim_ch;
 	int bl;
 	int x;
+	FILE *i = fopen(ip, "rb");
 	
 	fseek(i,0,SEEK_SET);
 	
 	if(read_le_dword(i) != 0x10)
+	{
+		fclose(i);
 		return -1;
+	}
 
 	tim_pmode = read_le_dword(i);
 	t->has_clut = (tim_pmode & 8) ? 1 : 0;
@@ -213,10 +174,12 @@ int tim2bmp_read_tim(FILE *i, tim2bmp_info *t)
 	t->data_off = ftell(i);
 	t->compr = 0;
 	
+	fclose(i);
+	
 	return 1;
 }
 
-int tim2bmp_read_pcsx15(FILE *i, tim2bmp_info *t)
+int tim2bmp_read_pcsx15(char *ip, tim2bmp_info *t)
 {
 	t->w = 1024;
 	t->real_w = 1024;
@@ -228,27 +191,23 @@ int tim2bmp_read_pcsx15(FILE *i, tim2bmp_info *t)
 	t->compr = 1;
 }
 
-void tim2bmp_convert_image_data(FILE *i, FILE *f, tim2bmp_info *t)
+void tim2bmp_convert_image_data(char *ip, char *fp, tim2bmp_info *t)
 {
 	int row_round;
-	int y,x;
+	int y,x,z;
 	int tim_row_off;
 	unsigned short c;
 	unsigned char r, g, b;
 	gzFile gzf;
+	unsigned char test[17];
+	FILE *i = fopen(ip, "rb");
+	FILE *f = fopen(fp, "wb");
 	
 	if(t->compr == 1)
-	{
-		rewind(i);
-		//printf("INIE = %d\n", fileno(i));
-		printf("tyour mi = %d\n", ftell(i));
-		gzf = gzdopen(fileno(i), "rb");
-		printf("ERRNO SHY = %s\n", gzerror(gzf, &x));
-		
-		printf("gzf = %d, gztell = %d\n", gzf, gztell(gzf));
-		//gzsetparams(gzf, Z_DEFAULT_COMPRESSION, Z_DEFLATED);
-	}
-		
+		gzf = gzopen(ip, "rb");
+	
+	write_bitmap_headers(f, t->real_w, t->h, t->bpp);
+	
 	if(t->has_clut)
 	{
 		if(t->bpp == 4) // 4bpp
@@ -308,7 +267,7 @@ void tim2bmp_convert_image_data(FILE *i, FILE *f, tim2bmp_info *t)
 		else
 			fseek(i, t->data_off + tim_row_off, SEEK_SET);
 		
-				printf("ERRNO SHY = %s\n", gzerror(gzf, &x));
+		//		printf("ERRNO SHY = %s\n", gzerror(gzf, &x));
 
 		
 		for(x = 0; x < t->w; x++)
@@ -345,12 +304,16 @@ void tim2bmp_convert_image_data(FILE *i, FILE *f, tim2bmp_info *t)
 		for(x = 0; x < row_round; x++)
 			fputc(0, f);
 	}
+	
+	fclose(i);
+	fclose(f);
+	if(t->compr == 1) gzclose(gzf);
 }
 
 int main(int argc, char *argv[])
 {
 	int x, y;
-	FILE *f, *i;
+	FILE *i;
 	int bl;
 	int tim_w, tim_h, tim_x, tim_y, tim_cx, tim_cy, tim_cw, tim_ch;
 	int row_round;
@@ -364,7 +327,6 @@ int main(int argc, char *argv[])
 	int bmp_bpp;
 	tim2bmp_info *t = &tim_info;
 	
-	
 	if(argc < 2)
 	{
 		printf("tim2bmp - converts a TIM image to a bitmap\n");
@@ -376,12 +338,12 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-	strm.zalloc = Z_NULL;
+	/*strm.zalloc = Z_NULL;
 	strm.zfree = Z_NULL;
 	strm.opaque = Z_NULL;
 	
-	r = deflateInit(&strm, 1);
-	printf("r = %d, Z_OK = %d\n", r, Z_OK);
+	r = deflateInit(&strm, 1);*/
+	//printf("r = %d, Z_OK = %d\n", r, Z_OK);
 	
 	i = fopen(argv[1], "rb");
 	
@@ -391,19 +353,15 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	
-
+	fclose(i);
 	
-	r = tim2bmp_read_tim(i, &tim_info);
+	r = tim2bmp_read_tim(argv[1], &tim_info);
 	
 	if(r != 1)
-		r = tim2bmp_read_pcsx15(i, &tim_info);
+		r = tim2bmp_read_pcsx15(argv[1], &tim_info);
 		
 	if(argc > 2)
-	{
-		f = fopen(argv[2], "wb");
-		write_bitmap_headers(f, t->real_w, t->h, t->bpp);
-		tim2bmp_convert_image_data(i, f, t);
-	}
+		tim2bmp_convert_image_data(argv[1], argv[2], t);
 
 	return 0;
 }
