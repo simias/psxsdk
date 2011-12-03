@@ -1,4 +1,0 @@
-bmp2tim todo
--------------------------------
-- Fix 4bpp with images with width not a multiplier of 8
-- Allow saving in an headerless format
