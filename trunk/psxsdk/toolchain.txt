@@ -1,0 +1,54 @@
+How to build a toolchain for the PSXSDK
+----------------------
+
+If you do not have the patience for this, do not do this. Unless you have
+some less used operating system and/or using a non-x86 processor on your development computer there are precompiled toolchains on the main PSXSDK site for some of the most common operating systems.
+
+These instructions are for Unix-like operating systems, although they will
+probably work also on Cygwin.
+
+To build a toolchain for the PSXSDK, you need to download GNU Binutils
+(http://www.gnu.org/software/binutils/) and GNU GCC (http://gcc.gnu.org)
+
+Remember to download gcc-core because languages other than C were not
+tested at all with the PSXSDK.
+
+It is assumed that you want to install the toolchain you are going to build in
+/usr/local/psxsdk. If you don't want to do that simply replace it in the 
+commands with something else.
+
+Open a terminal, extract binutils then cd to the binutils directory:
+./configure --prefix=/usr/local/psxsdk --target=mipsel-unknown-elf --with-float=soft
+
+Then to compile GNU binutils run:
+make
+
+and then to install GNU binutils: make install
+
+To build GCC, first go to the directory where you downloaded the GCC archive, extract it, make a directory called psxsdk-gcc and use cd to get into it.
+
+Configure GCC:
+<gcc-directory>/configure --disable-libada --disable-libssp --target=mipsel-unknown-elf --prefix=/usr/local/psxsdk --with-float=soft
+
+Replace <gcc-directory> with the directory where the GCC sources are.
+
+Note that on some systems (like NetBSD) for some reason GCC might not build if you run its configure script using a relative path
+(like ..). This happens for a strange reason. In doubt, run the configure script using an absolute path (the complete name of the directory).
+
+To compile GNU gcc run: make
+and then to install it: make install
+
+Now you just need to build the PSXSDK. Notice that the PSXSDK installs itself
+after building automatically and you will not need to execute a command to install it after building it.
+
+Before build the PSXSDK, edit Makefile.cfg. TOOLCHAIN_PREFIX is very important,
+it specifies the directory where the PSXSDK toolchain is installed in. In our example it is /usr/local/psxsdk (the default)
+	
+There should be explanations for the other variables. 
+To build the PSXSDK go into its directory, change your path variable to include the PSXSDK toolchain binaries:
+
+export PATH=$PATH:/usr/local/psxsdk/bin
+
+and execute "make".
+
+Hopefully everything should go fine now, and you have the PSXSDK ready to go.
