@@ -1,0 +1,13 @@
+This is a SVN version. Most times you will be able to use this without 
+any problem, but if it doesn't work, it is completely normal, as it is 
+in-development code that is not meant to be in any way complete and that 
+is not very tested.
+
+The new APIs of this version are not guaranteed to stay the same ones in 
+the next release version of the SDK. Keep this in mind.
+Functions already available in the latest release version will, nonetheless, 
+try to be backward-compatible. APIs available in release versions can be 
+expected not to change, new APIs in a SVN version are a moving target. 
+
+On the other hand this SVN version will probably have features 
+and fixes that are not available in the latest release version.
