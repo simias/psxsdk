@@ -1,0 +1,14 @@
+File:
+	Name: "Apple_Crunch_16.wav"
+	Url: http://www.freesound.org/samplesViewSingle.php?id=20279
+	Date of upload: 2006-06-28 11:44:45
+	
+Designer / Creator / Uploader:
+	Name: "Koops"
+	Url: http://www.freesound.org/usersViewSingle.php?id=29508
+	
+Description:
+	By "Koops" : 16/18 Apple related eating noises.  Recorded in my studio with a matched pair of Rode NT5\'s in the XY configuration.  Stereo, WAV, 44.1KHz, 16Bit, Unprocessed.
+
+Tags:
+	apple bite crunch eating food snack squelch 
