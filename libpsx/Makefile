@@ -13,7 +13,10 @@ OBJS = out/syscalls.o out/psxsdk.o out/libc.o out/setup.o \
 	out/libc/printf.o out/libc/string.o out/libc/scanf.o \
 	start.o
 
-all: libpsx.a
+all: out libpsx.a
+
+out:
+	mkdir out out/libc
 
 libpsx.a: $(OBJS)
 	$(AR) r libpsx.a $(OBJS)
@@ -24,7 +27,7 @@ out/syscalls.o: src/syscalls.s
 
 out/psxsdk.o: src/psxsdk.c
 	$(CC) $(CFLAGS) -c -o out/psxsdk.o src/psxsdk.c
-	
+
 out/libc.o: src/libc.c
 	$(CC) $(CFLAGS) -c -o out/libc.o src/libc.c
 
@@ -45,7 +48,7 @@ out/pad.o: src/pad.c
 
 out/spu.o: src/spu.c
 	$(CC) $(CFLAGS) -c -o out/spu.o src/spu.c
-	
+
 out/util.o: src/util.c
 	$(CC) $(CFLAGS) -c -o out/util.o src/util.c
 
@@ -65,7 +68,7 @@ install:
 	cp libpsx.a $(TOOLCHAIN_PREFIX)/lib
 	cp start.o $(TOOLCHAIN_PREFIX)/lib
 	cp -r include/*	$(TOOLCHAIN_PREFIX)/include
-	
+
 clean:
 	rm -f $(OBJS)
 	rm -f libpsx.a
